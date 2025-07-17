@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>IPTV Selector</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    #canales {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .canal {
+      cursor: pointer;
+      background-color: #222;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      width: 140px;
+      transition: background 0.3s;
+    }
+
+    .canal:hover {
+      background-color: #444;
+    }
+
+    .canal img {
+      width: 100px;
+      height: 60px;
+      object-fit: contain;
+    }
+
+    video {
+      display: block;
+      margin: 0 auto;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 12px;
+      border: 3px solid #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Selector de Canales IPTV</h1>
+  <div id="canales"></div>
+  <video id="player" controls autoplay></video>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    const canales = [
+      {
+        nombre: "Sony Channel",
+        logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Sony_Channel_Logo.png/512px-Sony_Channel_Logo.png",
+        url: "https://fl3.moveonjoy.com/Sony_Movie_Channel/index.m3u8"
+      },
+      {
+        nombre: "Las Estrellas",
+        logo: "https://i.imgur.com/g5ShxZ7.png",
+        url: "https://channel01-onlymex.akamaized.net/hls/live/2022749/event01/index.m3u8"
+      }
+    ];
+
+    const canalesDiv = document.getElementById('canales');
+    const video = document.getElementById('player');
+    let hls = null;
+
+    function cargarCanal(url) {
+      if (hls) {
+        hls.destroy();
+      }
+
+      if (Hls.isSupported()) {
+        hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.volume = 1.0;
+          video.play();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        video.volume = 1.0;
+        video.play();
+      } else {
+        alert("Tu navegador no soporta HLS (.m3u8). Usa Chrome, Firefox o Edge.");
+      }
+    }
+
+    canales.forEach(canal => {
+      const div = document.createElement('div');
+      div.className = 'canal';
+      div.innerHTML = `
+        <img src="${canal.logo}" alt="${canal.nombre}" />
+        <p>${canal.nombre}</p>
+      `;
+      div.onclick = () => cargarCanal(canal.url);
+      canalesDiv.appendChild(div);
+    });
+
+    // Cargar el primero automáticamente
+    cargarCanal(canales[0].url);
+  </script>
+  <script>
+    const ctx = new AudioContext();
+    const source = ctx.createMediaElementSource(video);
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = 2; // 🔊 2 = 200% del volumen
+
+    source.connect(gainNode).connect(ctx.destination);
+
+    video.onplay = () => {
+      ctx.resume(); // Necesario para que funcione tras autoplay
+    };
+  </script>
+
+</body>
+
+</html>
